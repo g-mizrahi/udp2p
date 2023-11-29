@@ -13,7 +13,7 @@ fn split_file(file_bytes: Vec<u8>, chunk_size: usize) -> Vec<Vec<u8>> {
         .collect::<Vec<Vec<u8>>>()
 }
 
-fn hash_bytes(bytes: &[u8]) -> [u8; 32] {
+fn hash_bytes(bytes: Vec<u8>) -> [u8; 32] {
     let mut hasher = Sha256::new();
     let mut hash = <[u8; 32]>::default();
     hasher.update(bytes);
@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn lib_file_hash_bytes() {
         assert_eq!(
-            hash_bytes(b"hello"),
+            hash_bytes(b"hello".to_vec()),
             hex::decode("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
                 .unwrap()[0..32]
         );
