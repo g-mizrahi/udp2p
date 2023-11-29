@@ -1,6 +1,6 @@
 [workspace.lints.rust]
 unsafe_code = "forbid"
-# unused = "allow" # for dev only
+unused = "allow" # for dev only
 
 [workspace]
 resolver = "2"
