@@ -5,7 +5,7 @@ pub mod mk_fs {
     use anyhow::{bail, Context, Result};
     use log::{debug, error, info, warn};
     use sha2::{Digest, Sha256};
-    use std::{fmt, fs, io, path::PathBuf};
+    use std::{fmt, fs, path::PathBuf};
 
     /// Merkle tree node type enum.
     ///
