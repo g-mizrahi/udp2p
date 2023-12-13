@@ -1,7 +1,6 @@
-//! This library contains functions to manipulate files.
-//! Its goal is to provide all utilities to extract data from files and prepare it to be exported to the REST server and sent over the network.
-
 pub mod mk_fs {
+    //! This module contains functions to manipulate files.
+    //! Its goal is to provide all utilities to extract data from files and prepare it to be exported to the REST server and sent over the network.
     use anyhow::{bail, Context, Result};
     use log::{debug, error, info, warn};
     use sha2::{Digest, Sha256};
