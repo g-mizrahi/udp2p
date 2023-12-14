@@ -33,36 +33,56 @@ pub mod discovery {
             .await
             .context(format!("Failed to connect to host {}.", url.as_str()))?;
 
-        if response.status() != StatusCode::OK {
-            bail!(
-                "Failed to get data from host {} with status code {}.",
-                response.url().as_str(),
-                response.status()
-            );
-        } else {
-            match response.text().await {
+        match response.status() {
+            StatusCode::OK => match response.text().await {
                 Ok(s) => return Ok(s),
                 Err(e) => bail!(format!(
-                    "Faile to get retrieve text from host {}",
+                    "Failed to get retrieve text from host {}",
                     url.as_str()
                 )),
+            },
+            StatusCode::NO_CONTENT => {
+                return Ok("".to_string());
+            }
+            _ => {
+                bail!(
+                    "Failed to get data from host {} with status code {}.",
+                    response.url().as_str(),
+                    response.status()
+                );
             }
         }
     }
 
-    pub async fn get_peer_addresses(client: Client, url: &Url, peer: &str) -> Result<Peer> {
-        let data = get_raw_data(client, url).await?;
+    pub async fn get_peer_addresses(client: Client, base_url: &Url, peer: &str) -> Result<Peer> {
+        // Peer adresses must be located at /peers/<p>/addresses from the base_url
+        let url = base_url.join(format!("peers/{peer}/addresses").as_str())?;
+        let data = get_raw_data(client, &url).await?;
         return Ok(Peer {
             name: peer.to_string(),
             addresses: parse_newline_separated(data),
         });
     }
 
-    pub async fn get_peers(client: Client, url: &Url) -> Result<Vec<String>> {
-        let data = get_raw_data(client, url).await?;
+    pub async fn get_peers_names(client: Client, base_url: &Url) -> Result<Vec<String>> {
+        // Peers names must be located at /peers from the base_url
+        let url = base_url.join("peers")?;
+        let data = get_raw_data(client, &url).await?;
         let peers = parse_newline_separated(data);
 
         return Ok(peers);
+    }
+
+    pub async fn get_peer_key(client: Client, base_url: &Url, peer: &str) -> Result<String> {
+        let url = base_url.join(format!("peers/{peer}/key").as_str())?;
+        let data = get_raw_data(client, &url).await?;
+        return Ok(data);
+    }
+
+    pub async fn get_peer_root(client: Client, base_url: &Url, peer: &str) -> Result<String> {
+        let url = base_url.join(format!("peers/{peer}/root").as_str())?;
+        let data = get_raw_data(client, &url).await?;
+        return Ok(data);
     }
 
     #[cfg(test)]
@@ -74,20 +94,20 @@ pub mod discovery {
 
         #[tokio::test]
         async fn lib_web_get_peers() {
-            let host = Url::parse("https://jch.irif.fr:8443/peers").unwrap();
+            let host = Url::parse("https://jch.irif.fr:8443/").unwrap();
             let five_seconds = Duration::new(5, 0);
             let client = Client::builder()
                 .timeout(five_seconds)
                 .user_agent("Projet M2 protocoles Internet")
                 .build()
                 .unwrap();
-            let result = get_peers(client, &host).await.unwrap();
-            println!("Result = {:?}", result);
+            let result = get_peers_names(client, &host).await.unwrap();
+            println!("Peers = {:?}", result);
         }
 
         #[tokio::test]
         async fn lib_web_get_peer_addresses() {
-            let host = Url::parse("https://jch.irif.fr:8443/peers/jch.irif.fr/addresses").unwrap();
+            let host = Url::parse("https://jch.irif.fr:8443/").unwrap();
             let five_seconds = Duration::new(5, 0);
             let client = Client::builder()
                 .timeout(five_seconds)
@@ -97,7 +117,51 @@ pub mod discovery {
             let result = get_peer_addresses(client, &host, "jch.irif.fr")
                 .await
                 .unwrap();
-            println!("Result = {:?}", result);
+            println!("Peer address = {:?}", result);
+        }
+
+        #[tokio::test]
+        async fn lib_web_get_peer_key() {
+            let host = Url::parse("https://jch.irif.fr:8443/").unwrap();
+            let five_seconds = Duration::new(5, 0);
+            let client = Client::builder()
+                .timeout(five_seconds)
+                .user_agent("Projet M2 protocoles Internet")
+                .build()
+                .unwrap();
+            let result = get_peer_key(client, &host, "jch.irif.fr").await;
+            match result {
+                Ok(key) => {
+                    if key.len() == 0 {
+                        println!("Peer key doesn't exist.")
+                    } else {
+                        println!("Peer key = {:?}", key);
+                    }
+                }
+                Err(e) => println!("Failed to retrieve peer key"),
+            }
+        }
+
+        #[tokio::test]
+        async fn lib_web_get_peer_root() {
+            let host = Url::parse("https://jch.irif.fr:8443/").unwrap();
+            let five_seconds = Duration::new(5, 0);
+            let client = Client::builder()
+                .timeout(five_seconds)
+                .user_agent("Projet M2 protocoles Internet")
+                .build()
+                .unwrap();
+            let result = get_peer_root(client, &host, "jch.irif.fr").await;
+            match result {
+                Ok(key) => {
+                    if key.len() == 0 {
+                        println!("Peer root doesn't exist.")
+                    } else {
+                        println!("Peer root = {:?}", key.as_bytes().to_vec());
+                    }
+                }
+                Err(e) => println!("Failed to retrieve peer root"),
+            }
         }
     }
 }
