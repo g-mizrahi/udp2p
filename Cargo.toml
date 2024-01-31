@@ -1,12 +1,18 @@
 [workspace.lints.rust]
 unsafe_code = "forbid"
-unused = "allow" # for dev only
+unused = "allow"       # for dev only
 
 [workspace]
 resolver = "2"
 
 members = [
     # -- Application libraries
-    "crates/libs/lib-web",
-    "crates/libs/lib-client",
+    "crates/libs/lib-web",    # library for web interactions client <--> server
+    "crates/libs/lib-client", # library for the client peer
+    "crates/libs/lib-server", # library for the server peer
+
+    # -- Application binaries
+    "crates/services/web-server", # binary for the central web server
+    "crates/services/cli",        # binary for the client peer cli
+    "crates/services/exporter",   # binary for the exporter peer
 ]
